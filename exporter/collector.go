@@ -34,6 +34,7 @@ type JSONMetricCollector struct {
 type JSONMetric struct {
 	Desc                   *prometheus.Desc
 	Type                   config.ScrapeType
+	ParseType              config.ParseType
 	KeyJSONPath            string
 	ValueJSONPath          string
 	LabelsJSONPaths        []string
@@ -55,6 +56,22 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 			if err != nil {
 				level.Error(mc.Logger).Log("msg", "Failed to extract value for metric", "path", m.KeyJSONPath, "err", err, "metric", m.Desc)
 				continue
+			}
+			level.Debug(mc.Logger).Log("msg", "parse type", "value", m.ParseType, "metric", m.Desc, "value", value)
+
+			if m.ParseType == config.ParseTypeHex {
+				if hexValue, err := SanitizeHexValue(value); err == nil {
+					metric := prometheus.MustNewConstMetric(
+						m.Desc,
+						m.ValueType,
+						hexValue,
+						extractLabels(mc.Logger, mc.Data, m.LabelsJSONPaths)...,
+					)
+					ch <- timestampMetric(mc.Logger, m, mc.Data, metric)
+				} else {
+					level.Error(mc.Logger).Log("msg", "Failed to convert extracted value to float64", "path", m.KeyJSONPath, "value", value, "err", err, "metric", m.Desc)
+					continue
+				}
 			}
 
 			if floatValue, err := SanitizeValue(value); err == nil {

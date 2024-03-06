@@ -24,6 +24,8 @@ import (
 type Metric struct {
 	Name           string
 	Path           string
+	Parse          ParseType
+	ParseType      ParseType
 	Labels         map[string]string
 	Type           ScrapeType
 	ValueType      ValueType
@@ -45,6 +47,13 @@ const (
 	ValueTypeGauge   ValueType = "gauge"
 	ValueTypeCounter ValueType = "counter"
 	ValueTypeUntyped ValueType = "untyped"
+)
+
+type ParseType string
+
+const (
+	ParseTypeFloat ParseType = "float"
+	ParseTypeHex   ParseType = "hex"
 )
 
 // Config contains multiple modules.
@@ -82,6 +91,9 @@ func LoadConfig(configPath string) (Config, error) {
 		for i := 0; i < len(module.Metrics); i++ {
 			if module.Metrics[i].Type == "" {
 				module.Metrics[i].Type = ValueScrape
+			}
+			if module.Metrics[i].ParseType == "" {
+				module.Metrics[i].ParseType = ParseTypeFloat
 			}
 			if module.Metrics[i].Help == "" {
 				module.Metrics[i].Help = module.Metrics[i].Name

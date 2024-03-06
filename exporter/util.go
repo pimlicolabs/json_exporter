@@ -74,6 +74,19 @@ func SanitizeIntValue(s string) (int64, error) {
 	return value, fmt.Errorf(resultErr)
 }
 
+func SanitizeHexValue(hex string) (float64, error) {
+	// Remove the "0x" prefix from the hex string
+	hex = strings.TrimPrefix(hex, "0x")
+
+	// Convert the hex string to int64
+	value, err := strconv.ParseInt(hex, 16, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	return float64(value), nil
+}
+
 func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 	var (
 		metrics   []JSONMetric
@@ -103,6 +116,7 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 					variableLabels,
 					nil,
 				),
+				ParseType:              metric.ParseType,
 				KeyJSONPath:            metric.Path,
 				LabelsJSONPaths:        variableLabelsValues,
 				ValueType:              valueType,
